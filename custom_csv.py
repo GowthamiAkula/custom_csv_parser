@@ -107,18 +107,76 @@ class CustomCsvReader:
 
 
 class CustomCsvWriter:
-    pass  # TODO: implement in Module 3
+    """
+    Simple CSV writer that:
+    - Takes rows as lists of strings.
+    - Escapes internal quotes by doubling them.
+    - Wraps fields in quotes when needed (comma, quote, or newline inside). [web:42][web:61]
+    """
+
+    def __init__(self, file_obj, delimiter=",", quotechar='"'):
+        self.file_obj = file_obj
+        self.delimiter = delimiter
+        self.quotechar = quotechar
+
+    def _escape_field(self, value):
+        """
+        Turn a single value into a CSV-safe field string. [web:60][web:68]
+        """
+        if value is None:
+            value = ""
+        else:
+            value = str(value)
+
+        needs_quotes = (
+            self.delimiter in value
+            or self.quotechar in value
+            or "\n" in value
+            or "\r" in value
+        )
+
+        # First escape any existing quotes by doubling them: " -> "" [web:63][web:68]
+        if self.quotechar in value:
+            value = value.replace(self.quotechar, self.quotechar * 2)
+
+        if needs_quotes:
+            return f'{self.quotechar}{value}{self.quotechar}'
+        else:
+            return value
+
+    def writerow(self, row):
+        """
+        Write a single CSV row (list/tuple of values) to the file. [web:22][web:73]
+        """
+        fields = [self._escape_field(v) for v in row]
+        line = self.delimiter.join(fields) + "\n"
+        self.file_obj.write(line)
+
+    def writerows(self, rows):
+        """
+        Write many rows (iterable of lists/tuples).
+        """
+        for row in rows:
+            self.writerow(row)
+
 
 if __name__ == "__main__":
-    # Simple manual test for reader
-    sample = 'name,age,comment\n"Ram",20,"hello, world"\n"Sita",25,"line1\nline2"\n'
+    # ---- Test writer ----
+    rows = [
+        ["name", "age", "comment"],
+        ["Ram", 20, "hello, world"],
+        ["Sita", 25, 'He said "Hi"'],
+        ["Multi", 30, "line1\nline2"],
+    ]
 
-    # Write sample to a temp file
-    with open("sample.csv", "w", newline="") as f:
-        f.write(sample)
+    with open("writer_sample.csv", "w", newline="") as f:
+        writer = CustomCsvWriter(f)
+        writer.writerows(rows)
 
-    # Read using our CustomCsvReader
-    with open("sample.csv", "r", newline="") as f:
+    print("Wrote writer_sample.csv using CustomCsvWriter")
+
+    # ---- Test reader on the file just written ----
+    with open("writer_sample.csv", "r", newline="") as f:
         reader = CustomCsvReader(f)
         for row in reader:
             print(row)
