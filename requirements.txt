@@ -1,0 +1,5 @@
+# Project dependencies for Custom CSV Parser
+
+# Standard library only; no third-party packages required.
+# Tested with:
+# Python>=3.9
